@@ -86,11 +86,13 @@ class StockMove(models.Model):
     def _do_unreserve(self):
         Quant = self.env['stock.quant']
         if any(move.state in ('done',) for move in self):
-            ml = self.mapped('move_line_ids')
+            mlx = self.mapped('move_line_ids')
             if self.raw_material_production_id:
-                Quant._update_available_quantity(ml.product_id, ml.location_id, ml.qty_done, lot_id=ml.lot_id, package_id=ml.package_id, owner_id=ml.owner_id)
+                for ml in mlx:
+                    Quant._update_available_quantity(ml.product_id, ml.location_id, ml.qty_done, lot_id=ml.lot_id, package_id=ml.package_id, owner_id=ml.owner_id)
             if self.production_id:
-                Quant._update_available_quantity(ml.product_id, ml.location_dest_id, -ml.qty_done, lot_id=ml.lot_id, package_id=ml.package_id, owner_id=ml.owner_id)
+                for ml in mlx:
+                    Quant._update_available_quantity(ml.product_id, ml.location_dest_id, -ml.qty_done, lot_id=ml.lot_id, package_id=ml.package_id, owner_id=ml.owner_id)
             self._recompute_state()
         if any(move.state in ('cancel') for move in self):
             raise UserError(_('Cannot unreserve a done move'))
